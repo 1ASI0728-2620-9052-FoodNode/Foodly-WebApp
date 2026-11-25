@@ -5,6 +5,8 @@ import { DETAIL_STATUS, useHuariqueDetail } from '../application/useHuariqueDeta
 import { CUISINE_TYPES, DAY_LABELS, sortedOpeningHours } from '../domain/huarique.js';
 import FavoriteButton from '../../community/interfaces/FavoriteButton.vue';
 import { useFavoritesStore } from '../../community/application/useFavoritesStore.js';
+import { useLiaDrawerStore } from '../../messaging/application/useLiaDrawerStore.js';
+import { useRadarStore } from '../../radar/application/useRadarStore.js';
 import { googleMapsDirectionsUrl } from '../../../shared/geo/distance.js';
 import { formatPriceRange, formatSoles } from '../../../shared/utils/format.js';
 import AppButton from '../../../shared/ui/AppButton.vue';
@@ -20,6 +22,8 @@ const route = useRoute();
 const { status, huarique, menu, reload } = useHuariqueDetail(() => String(route.params.id));
 
 const favorites = useFavoritesStore();
+const liaDrawer = useLiaDrawerStore();
+const radar = useRadarStore();
 if (!favorites.loaded) favorites.load();
 
 const activeImage = ref(0);
@@ -86,10 +90,25 @@ const mapMarkers = computed(() =>
       </header>
 
       <div class="detail__actions">
-        <AppButton disabled title="Disponible próximamente">
-          <AppIcon name="calendar" :size="18" /> Reservar Mesa con Lía
-        </AppButton>
-        <AppButton variant="secondary" disabled title="Disponible próximamente">
+        <RouterLink
+          v-slot="{ navigate }"
+          :to="{ name: 'reserve', params: { id: huarique.id } }"
+          custom
+        >
+          <AppButton @click="navigate">
+            <AppIcon name="calendar" :size="18" /> Reservar Mesa con Lía
+          </AppButton>
+        </RouterLink>
+        <AppButton
+          variant="secondary"
+          @click="
+            liaDrawer.open({
+              huariqueId: huarique.id,
+              huariqueName: huarique.name,
+              location: radar.location,
+            })
+          "
+        >
           <AppIcon name="message" :size="18" /> Preguntar a Lía
         </AppButton>
         <a

@@ -42,13 +42,37 @@ export const routes = [
         meta: { title: 'Huarique', role: ROLES.EXPLORER },
       },
       {
+        path: 'huariques/:id/reservar',
+        name: 'reserve',
+        component: () => import('../contexts/reservation/interfaces/ReserveView.vue'),
+        meta: { title: 'Reservar Mesa', role: ROLES.EXPLORER },
+      },
+      {
+        path: 'reservas',
+        name: 'my-reservations',
+        component: () => import('../contexts/reservation/interfaces/MyReservationsView.vue'),
+        meta: { title: 'Mis Reservas', role: ROLES.EXPLORER },
+      },
+      {
+        path: 'reservas/:id',
+        name: 'reservation-detail',
+        component: () => import('../contexts/reservation/interfaces/ReservationConfirmedView.vue'),
+        meta: { title: 'Reserva', role: ROLES.EXPLORER },
+      },
+      {
+        path: 'reservas/:id/ruta',
+        name: 'directions',
+        component: () => import('../contexts/reservation/interfaces/DirectionsView.vue'),
+        meta: { title: 'Cómo llegar', role: ROLES.EXPLORER },
+      },
+      {
         path: 'favoritos',
         name: 'favorites',
         component: () => import('../contexts/community/interfaces/FavoritesView.vue'),
         meta: { title: 'Favoritos', role: ROLES.EXPLORER },
       },
       {
-        path: 'mensajes',
+        path: 'mensajes/:conversationId?',
         name: 'messages',
         component: () => import('../contexts/messaging/interfaces/MessagesView.vue'),
         meta: { title: 'Mensajes', role: ROLES.EXPLORER },

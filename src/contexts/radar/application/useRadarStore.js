@@ -1,8 +1,6 @@
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
-import { radarService } from '../infrastructure/RadarService.js';
-import { enrichLocations } from './enrichLocations.js';
-import { useHuariqueCatalogStore } from '../../business/application/useHuariqueCatalogStore.js';
+import { searchNearby } from './searchNearby.js';
 import { EMPTY_FILTERS, filterHuariques } from '../../business/domain/huariqueFilters.js';
 import { buildCoverage } from '../../../shared/geo/h3Zone.js';
 import { findDistrict } from '../../../shared/geo/districts.js';
@@ -58,13 +56,11 @@ export const useRadarStore = defineStore('radar', () => {
     error.value = '';
     const startedAt = performance.now();
     try {
-      const locations = await radarService.search({
+      const { locations, ...result } = await searchNearby({
         latitude: location.value.latitude,
         longitude: location.value.longitude,
         kRing: kRing.value,
       });
-      const catalog = useHuariqueCatalogStore();
-      const result = await enrichLocations(locations, catalog.loadMany);
       if (seq !== searchSeq) return; // a newer search superseded this one
 
       if (locations.length > 0 && result.items.length === 0 && result.failedCount > 0) {

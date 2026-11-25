@@ -12,10 +12,14 @@ import LocationPicker from './LocationPicker.vue';
 import RadarResults from './RadarResults.vue';
 import HuariqueFilters from '../../business/interfaces/HuariqueFilters.vue';
 import { DISTRICTS } from '../../../shared/geo/districts.js';
+import AppButton from '../../../shared/ui/AppButton.vue';
+import AppIcon from '../../../shared/ui/AppIcon.vue';
 import AppMap from '../../../shared/ui/AppMap.vue';
+import { useLiaDrawerStore } from '../../messaging/application/useLiaDrawerStore.js';
 import AppSelect from '../../../shared/ui/AppSelect.vue';
 
 const radar = useRadarStore();
+const liaDrawer = useLiaDrawerStore();
 const favorites = useFavoritesStore();
 const {
   location,
@@ -109,6 +113,9 @@ onMounted(() => {
   <section class="radar">
     <header class="radar__header">
       <h1 class="radar__title">Radar H3</h1>
+      <AppButton variant="secondary" @click="liaDrawer.open({ location })">
+        <AppIcon name="message" :size="18" /> Preguntar a Lía
+      </AppButton>
       <div v-if="location" class="radar__radius">
         <AppSelect
           :model-value="String(kRing)"
