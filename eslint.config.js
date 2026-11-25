@@ -16,6 +16,8 @@ export default [
     },
     rules: {
       'vue/multi-word-component-names': 'off',
+      // Form components edit the reactive form object their parent owns (nested fields only).
+      'vue/no-mutating-props': ['error', { shallowOnly: true }],
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
