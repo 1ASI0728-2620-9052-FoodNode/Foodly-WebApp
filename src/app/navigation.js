@@ -4,8 +4,8 @@ import { ROLES } from '../contexts/iam/domain/roles.js';
 export const NAV_ITEMS = Object.freeze({
   [ROLES.EXPLORER]: [
     { to: '/radar', label: 'Radar H3', icon: 'radar' },
-    { to: '/favorites', label: 'Favoritos', icon: 'heart' },
-    { to: '/messages', label: 'Mensajes', icon: 'message' },
+    { to: '/favoritos', label: 'Favoritos', icon: 'heart' },
+    { to: '/mensajes', label: 'Mensajes', icon: 'message' },
     { to: '/profile', label: 'Perfil', icon: 'user' },
   ],
   [ROLES.OWNER]: [
