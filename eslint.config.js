@@ -4,7 +4,7 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default [
-  { ignores: ['dist/**', 'coverage/**', 'node_modules/**'] },
+  { ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'playwright-report/**', 'test-results/**'] },
   js.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
   {
@@ -22,12 +22,12 @@ export default [
     },
   },
   {
-    files: ['*.config.js', 'vite.config.js'],
+    files: ['*.config.js', 'vite.config.js', 'playwright.config.js'],
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    files: ['**/*.test.js', 'tests/**/*.js'],
-    languageOptions: { globals: { ...globals.node } },
+    files: ['**/*.test.js', 'tests/**/*.js', 'e2e/**/*.js', 'scripts/**/*.{js,mjs}'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   prettier,
 ];
