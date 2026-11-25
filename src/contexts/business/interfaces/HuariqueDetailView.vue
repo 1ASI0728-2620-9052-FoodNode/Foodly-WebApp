@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { DETAIL_STATUS, useHuariqueDetail } from '../application/useHuariqueDetail.js';
 import { CUISINE_TYPES, DAY_LABELS, sortedOpeningHours } from '../domain/huarique.js';
+import ReviewsWall from '../../community/interfaces/ReviewsWall.vue';
 import FavoriteButton from '../../community/interfaces/FavoriteButton.vue';
 import { useFavoritesStore } from '../../community/application/useFavoritesStore.js';
 import { useLiaDrawerStore } from '../../messaging/application/useLiaDrawerStore.js';
@@ -197,11 +198,7 @@ const mapMarkers = computed(() =>
       <section aria-labelledby="reviews-title" class="detail__section">
         <h2 id="reviews-title">Reseñas verificadas</h2>
         <AppCard>
-          <EmptyState
-            icon="shieldCheck"
-            title="Aún no hay reseñas"
-            description="Las reseñas de comensales con reserva verificada aparecerán aquí."
-          />
+          <ReviewsWall :huarique-id="huarique.id" />
         </AppCard>
       </section>
     </template>

@@ -11,6 +11,7 @@ import {
 import IdentityFields from './IdentityFields.vue';
 import PricingLocationFields from './PricingLocationFields.vue';
 import OpeningHoursEditor from './OpeningHoursEditor.vue';
+import ReviewsWall from '../../community/interfaces/ReviewsWall.vue';
 import OwnerNotices from './OwnerNotices.vue';
 import OwnerStatusSwitch from './OwnerStatusSwitch.vue';
 import { formatPriceRange } from '../../../shared/utils/format.js';
@@ -129,7 +130,15 @@ async function save() {
         </form>
       </AppCard>
 
+      <AppCard as="section" aria-labelledby="reputation-title">
+        <div class="section">
+          <h2 id="reputation-title">Reputación</h2>
+          <ReviewsWall :huarique-id="owner.huarique.id" />
+        </div>
+      </AppCard>
+
       <nav class="links" aria-label="Más secciones">
+        <RouterLink :to="{ name: 'owner-reservations' }">Reservas de Lía →</RouterLink>
         <RouterLink :to="{ name: 'owner-menu' }">Carta y Precios →</RouterLink>
         <RouterLink :to="{ name: 'owner-gallery' }">Fotos y Galería →</RouterLink>
       </nav>
