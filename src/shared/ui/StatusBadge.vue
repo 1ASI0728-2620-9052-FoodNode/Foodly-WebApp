@@ -8,6 +8,8 @@ export const BADGE_STATUSES = Object.freeze({
   rejected: { label: 'Rechazada', icon: 'x', tone: 'error' },
   expired: { label: 'Expirada', icon: 'alert', tone: 'neutral' },
   verified: { label: 'Reserva Verificada', icon: 'shieldCheck', tone: 'success' },
+  available: { label: 'Disponible hoy', icon: 'check', tone: 'success' },
+  unavailable: { label: 'No disponible hoy', icon: 'x', tone: 'neutral' },
 });
 </script>
 
