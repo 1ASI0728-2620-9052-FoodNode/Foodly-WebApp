@@ -147,4 +147,44 @@ describe('createHttpClient', () => {
     await client.get('/x');
     expect(fetchImpl.mock.calls[0][1].headers.Authorization).toBe('Bearer late-token');
   });
+
+  it('sends FormData as-is, without forcing a JSON content type', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(201, { id: 'i1' }));
+    const form = new FormData();
+    form.append('file', new File(['x'], 'a.png', { type: 'image/png' }));
+
+    await setup(fetchImpl).post('/upload', form);
+
+    const init = fetchImpl.mock.calls[0][1];
+    expect(init.body).toBe(form);
+    expect(init.headers['Content-Type']).toBeUndefined();
+  });
+
+  it('lets one request override the timeout', async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchImpl = vi.fn(
+        (_url, init) =>
+          new Promise((_resolve, reject) => {
+            init.signal.addEventListener('abort', () =>
+              reject(new DOMException('Aborted', 'AbortError')),
+            );
+          }),
+      );
+      const pending = setup(fetchImpl, { timeoutMs: 1000 })
+        .post('/upload', {}, { timeoutMs: 5000 })
+        .catch((e) => e);
+
+      await vi.advanceTimersByTimeAsync(1000);
+      let settled = false;
+      pending.then(() => (settled = true));
+      await Promise.resolve();
+      expect(settled).toBe(false); // the global 1 s timeout did not apply
+
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(await pending).toMatchObject({ kind: 'timeout' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

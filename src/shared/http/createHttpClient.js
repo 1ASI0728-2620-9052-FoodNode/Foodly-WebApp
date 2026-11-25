@@ -51,7 +51,8 @@ export function createHttpClient({
 } = {}) {
   const state = { baseUrl, timeoutMs, getToken, onUnauthorized };
 
-  async function request(method, path, { body, query, headers, signal } = {}) {
+  async function request(method, path, { body, query, headers, signal, timeoutMs } = {}) {
+    const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
     const doFetch = fetchImpl ?? globalThis.fetch.bind(globalThis);
     const token = state.getToken();
     const controller = new AbortController();
@@ -59,7 +60,7 @@ export function createHttpClient({
     const timer = setTimeout(() => {
       timedOut = true;
       controller.abort();
-    }, state.timeoutMs);
+    }, timeoutMs ?? state.timeoutMs);
     if (signal) {
       if (signal.aborted) controller.abort();
       else signal.addEventListener('abort', () => controller.abort(), { once: true });
@@ -70,11 +71,12 @@ export function createHttpClient({
       signal: controller.signal,
       headers: {
         Accept: 'application/json',
-        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        // FormData sets its own multipart boundary: never force a content type on it.
+        ...(body !== undefined && !isForm ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
-      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      ...(body !== undefined ? { body: isForm ? body : JSON.stringify(body) } : {}),
     };
 
     let response;
