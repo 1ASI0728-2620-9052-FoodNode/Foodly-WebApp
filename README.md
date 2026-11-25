@@ -2,18 +2,14 @@
 
 Aplicación web de Foodly (curso 1ASI0728, UPC). Cliente para dos perfiles:
 
-- **Explorador Gastronómico** (`GASTRONOMIC_EXPLORER`): Radar H3, Favoritos, Mensajes (Lía), Perfil.
-- **Dueño de Huarique** (`HUARIQUE_OWNER`, "Foodly Admin"): Dashboard, Reservas, Mi Menú, Galería, Perfil.
-
-Estado actual (`feature/web-foundation`): base del proyecto, design system, layouts, cliente HTTP, y la
-pantalla **W1 (Registro / Inicio de sesión, UF-W1)** con guards por rol y páginas 403/404. El resto de
-pantallas son marcadores "Próximamente" que cada fase posterior reemplaza.
+- **Explorador Gastronómico** (`GASTRONOMIC_EXPLORER`): Radar H3, detalle de huarique, favoritos, Lía, reservas y reseñas.
+- **Dueño de Huarique** (`HUARIQUE_OWNER`, "Foodly Admin"): onboarding, dashboard, carta, galería, reservas y reputación.
 
 ## Stack
 
-Vue 3 + Vite · JavaScript (sin TypeScript) · Vue Router · Pinia · ESLint (`eslint-plugin-vue` recommended) +
-Prettier · Vitest + `@vue/test-utils` · Leaflet + OpenStreetMap + `h3-js` (mapas, fases siguientes). Sin
-librerías de UI: componentes propios con variables CSS.
+Vue 3 + Vite · JavaScript (sin TypeScript) · Vue Router · Pinia · ESLint (`eslint-plugin-vue` recommended) + Prettier ·
+Vitest + `@vue/test-utils` · Playwright (e2e) · Leaflet + OpenStreetMap + `h3-js` · `@stomp/stompjs` · `qrcode`.
+Sin librerías de UI: componentes propios con variables CSS.
 
 ## Puesta en marcha
 
@@ -23,39 +19,43 @@ cp .env.example .env.local   # PowerShell: Copy-Item .env.example .env.local
 npm run dev                  # http://localhost:5173
 ```
 
-Requisitos: Node 20+ (probado con 24).
+Requisitos: Node 20+ (probado con 22 y 24). Para usar el backend real: `foodly-infra\start-all.ps1` (Kong en `:8000`).
 
-| Script                              | Qué hace                                        |
-| ----------------------------------- | ----------------------------------------------- |
-| `npm run dev`                       | Servidor de desarrollo con proxy al gateway     |
-| `npm run build` / `npm run preview` | Build de producción / servirlo localmente       |
-| `npm run lint` / `lint:fix`         | ESLint (`.js` y `.vue`)                         |
-| `npm run format` / `format:check`   | Prettier                                        |
-| `npm run test`                      | Vitest (una pasada); `test:watch` para observar |
+| Script                              | Qué hace                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| `npm run dev`                       | Servidor de desarrollo con proxy al gateway                               |
+| `npm run build` / `npm run preview` | Build de producción / servirlo localmente                                 |
+| `npm run lint` · `npm run format`   | ESLint · Prettier                                                         |
+| `npm run test`                      | Vitest (unitarios y de componentes, sin red)                              |
+| `npm run e2e`                       | Playwright contra el backend real; **se omite si el gateway no responde** |
 
 Antes de abrir un PR deben pasar `npm run lint`, `npm run test` y `npm run build`.
 
-## Variables de entorno
+### Variables de entorno
 
-Copiar `.env.example` a `.env.local` (ignorado por git). Todo `VITE_*` queda **público** en el bundle:
-nunca poner secretos.
+Copiar `.env.example` a `.env.local` (ignorado por git). Todo `VITE_*` queda **público** en el bundle: nunca poner secretos.
 
-| Variable                | Uso                                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------------------ |
-| `VITE_API_GATEWAY_URL`  | URL de Kong (`http://localhost:8000`). Destino del proxy en desarrollo; base URL en build. |
-| `VITE_MOCK_RESERVATION` | `true` mientras Reservation no tenga API.                                                  |
-| `VITE_MOCK_COMMUNITY`   | `true` mientras Community no tenga API.                                                    |
+| Variable                | Uso                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `VITE_API_GATEWAY_URL`  | URL de Kong (`http://localhost:8000`). Destino del proxy en desarrollo; base URL en un build sin nginx. |
+| `VITE_MOCK_RESERVATION` | `true` mientras Reservation no tenga API (hoy no la tiene).                                             |
+| `VITE_MOCK_COMMUNITY`   | `true` mientras Community no tenga API (hoy no la tiene).                                               |
 
 ## Conexión con el backend
 
-Todo el tráfico va al API Gateway Kong. En desarrollo, Vite hace de proxy de `/iam`, `/business-api`,
-`/radar`, `/messaging` (con WebSocket), `/reservation-api` y `/community` hacia `VITE_API_GATEWAY_URL`, así
-el navegador solo habla con `localhost:5173` y **no hay CORS**. En el build de producción el cliente usa
-`VITE_API_GATEWAY_URL` directamente, por lo que Kong (o el hosting) debe resolver CORS o servir la app bajo
-el mismo origen.
+Todo el tráfico va al API Gateway Kong. En desarrollo, Vite hace de proxy de `/iam`, `/business-api`, `/radar`, `/messaging`
+(con WebSocket), `/reservation-api` y `/community`, así el navegador solo habla con `localhost:5173` y **no hay CORS**.
+`/radar` es a la vez ruta de la SPA y prefijo de API: las navegaciones `text/html` reciben la app y los `fetch` JSON van a Kong.
 
-Para probar contra el backend real: levantar la infraestructura con `foodly-infra\start-all.ps1` (Kong en
-`:8000`, IAM `:8081`, Business `:8080`).
+**Reservation y Community aún no tienen API.** Cada uno tiene una interfaz común y dos adaptadores, elegidos por flag:
+
+| Servicio                        | Mock (localStorage)                                                                  | HTTP (contrato del informe)                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Favoritos (`FavoriteService`)   | por usuario, sin duplicados                                                          | `GET /community/favorites/me`, `POST`/`DELETE /community/favorites/{id}` (5.4.2)                     |
+| Reseñas (`ReviewService`)       | compartido entre cuentas del navegador                                               | `GET`/`POST /community/huariques/{id}/reviews` (5.4.2)                                               |
+| Reservas (`ReservationService`) | compartido entre cuentas: un explorador reserva y el dueño aprueba desde otra cuenta | `POST /reservation-api/reservations`, `GET …/me`, `GET …/huarique/{id}`, `PUT …/{id}/status` (5.5.2) |
+
+El plato de interés y la nota de Lía viajan dentro de `notes` (una línea cada una), porque el contrato solo tiene ese campo.
 
 ## Arquitectura
 
@@ -65,91 +65,137 @@ Organización por bounded context, igual que `AppMobile-FoodNode`:
 src/
   app/                  router, guards, layouts, vistas globales (login, 403, 404), bootstrap, App.vue
   shared/
-    config/             lectura de variables de entorno
-    http/               cliente fetch (base URL, Bearer, JSON, timeout, errores en español)
-    ui/                 tokens.css, base.css y componentes base (AppButton, AppInput, StatusBadge, ...)
-    utils/              utilidades puras (jwt)
+    config/ http/       lectura de entorno · cliente fetch (Bearer, JSON, multipart, timeout, errores en español)
+    geo/                H3, distancias, distritos de Lima, geolocalización
+    ui/                 tokens.css, base.css y componentes base (AppButton, AppInput, AppMap, StatusBadge, ...)
+    utils/              jwt, formato, polling
   contexts/<iam|radar|business|community|reservation|messaging>/
-    domain/             modelos y reglas simples (sin Vue, sin HTTP)
-    infrastructure/     XxxService.js (TODAS las llamadas HTTP) y MockXxxService.js
-    application/        stores Pinia y composables useXxx
-    interfaces/         vistas y componentes .vue
+    domain/ infrastructure/ application/ interfaces/
 ```
 
-Los componentes **nunca** llaman al backend: pasan por un store o composable, que usa un `XxxService`.
-`app/` puede orquestar varios contextos (p. ej. `postLoginRoute.js` usa IAM y Business); los contextos
-no importan de `app/`.
+Los componentes **nunca** llaman al backend: vista → store/composable → `XxxService` → `shared/http`.
+Un contexto no importa la infraestructura de otro; usa su `application` (stores). `app/` orquesta varios contextos.
 
-## Design system
+## Pantallas
 
-`src/shared/ui/tokens.css` define la paleta del informe (6.1): `--color-primary #964100`,
-`--color-brown #492906`, `--color-bg #FFF8F5`, `--color-surface-soft #FFF1E8`, `--color-success #5A7D00`,
-`--color-success-soft #C8F06E`, `--color-white #FFFFFF`, más rojo de error y naranja brillante de pendiente.
-Tipografía Plus Jakarta Sans (`@fontsource-variable`). Componentes base: `AppButton`
-(primary/secondary/danger/success), `AppCard`, `AppInput`, `AppSelect`, `StatusBadge`, `EmptyState`,
-`LoadingState`, `ErrorState`, `AppToast` (+ `useToast`) y `AppIcon`.
+Rutas: explorador `/radar`, `/huariques/:id`, `/huariques/:id/reservar`, `/favoritos`, `/mensajes/:id?`, `/reservas`,
+`/reservas/:id`, `/reservas/:id/ruta`, `/profile`; dueño `/owner/onboarding`, `/owner/dashboard`, `/owner/reservations`,
+`/owner/menu`, `/owner/gallery`, `/owner/profile`; públicas `/login`, `/403`, `/404`. Los guards usan `meta.role`.
 
-Accesibilidad: foco visible global, `aria-label` en controles de solo ícono, áreas táctiles de al menos
-44 px, estados siempre con texto + ícono (nunca solo color) y colores de texto con contraste AA.
-Layout responsive: barra superior desde 768 px, barra inferior por debajo.
+Las capturas se regeneran con `E2E_SCREENSHOTS=1 npm run e2e -- screenshots` (usan el backend real y los mocks de Reservation y Community).
 
-## W1 · Registro / Inicio de sesión
+### W1 · Registro / Inicio de sesión (UF-W1)
 
-Endpoints (verificados en `Foodly-IAM-Service`):
+| Inicio de sesión                                      | Registro                                         |
+| ----------------------------------------------------- | ------------------------------------------------ |
+| ![W1 inicio de sesión](docs/screenshots/w1-login.png) | ![W1 registro](docs/screenshots/w1-registro.png) |
 
-| Acción        | Endpoint                         | Respuesta                                             |
-| ------------- | -------------------------------- | ----------------------------------------------------- |
-| Registro      | `POST /iam/auth/register` → 201  | `{ token, tokenType, expiresAt, userId, name, role }` |
-| Login         | `POST /iam/auth/login` → 200     | igual que registro                                    |
-| Perfil propio | `GET /iam/users/me`              | `{ id, name, email, username, phone, role }`          |
-| Mi huarique   | `GET /business-api/huariques/me` | huarique, o `404` si el dueño aún no registró uno     |
+Endpoints: `POST /iam/auth/register`, `POST /iam/auth/login`, `GET /iam/users/me`. Validaciones espejo de IAM
+(`RegisterUserResource`): nombre ≤150, email, username `^[a-zA-Z0-9_]{3,30}$`, teléfono opcional `^\+?[0-9]{9,15}$`
+(vacío = se omite del JSON), contraseña 8–72 caracteres (y ≤72 bytes por BCrypt). Tras autenticarse: explorador → `/radar`;
+dueño → `GET /business-api/huariques/me`: 404 → `/owner/onboarding`, existe → `/owner/dashboard`.
 
-Validaciones del formulario (espejo de `RegisterUserResource` y los value objects de IAM):
+**Token:** `sessionStorage` (se borra al cerrar la pestaña, sobrevive a recargas). Trade-off: un XSS podría leerlo; una cookie
+`httpOnly` evitaría eso pero exige cambios en IAM. Se decodifica solo para leer `role` y `exp`; al expirar se cierra la sesión.
+Un 401 de una petición **con** token cierra la sesión y lleva a `/login`.
 
-| Campo      | Regla                                                                                   |
-| ---------- | --------------------------------------------------------------------------------------- |
-| Nombre     | obligatorio, máx. 150                                                                   |
-| Email      | `^[^\s@]+@[^\s@]+\.[^\s@]+$`, máx. 254                                                  |
-| Username   | `^[a-zA-Z0-9_]{3,30}$`                                                                  |
-| Teléfono   | opcional; `^\+?[0-9]{9,15}$`. **Vacío = se omite del JSON** (con `""` IAM responde 400) |
-| Contraseña | 8–72 caracteres (más: ≤ 72 **bytes** UTF-8, por el límite de BCrypt)                    |
-| Perfil     | `GASTRONOMIC_EXPLORER` o `HUARIQUE_OWNER`                                               |
+### W2 · Radar H3 (UF-W2)
 
-Tras autenticarse: Explorador → `/radar`. Dueño → consulta `GET /business-api/huariques/me`: `404` →
-`/owner/onboarding`, existe → `/owner/dashboard`. Si Business no responde, el dueño entra al dashboard con
-un aviso.
+| Escritorio                                                       | Móvil                                                  |
+| ---------------------------------------------------------------- | ------------------------------------------------------ |
+| ![W2 radar escritorio](docs/screenshots/w2-radar-escritorio.png) | ![W2 radar móvil](docs/screenshots/w2-radar-movil.png) |
 
-Errores en el mismo formulario: `409` (correo o usuario ya registrados; IAM usa el mismo texto para ambos),
-`401` (credenciales) y `400` (datos inválidos). Un `401` de una petición **con** token cierra la sesión y
-lleva a `/login`; el `401` de un login fallido no.
+«Compartir Mi Ubicación» (si se niega: explicación, distrito fijo o arrastrar el marcador), `POST /radar/search`
+(`kRing` 1–5, por defecto 2), celdas H3 (resolución 9, `gridDisk`) dibujadas en el mapa, tarjetas ordenadas por distancia
+completadas con `GET /business-api/huariques/{id}` en paralelo (caché 60 s, tolera 404), filtros en el cliente
+(texto, categoría `CuisineType`, nivel de precio, «Abierto Ahora»), esqueletos, estado vacío y error con reintento.
+En modo dev muestra el tiempo de la búsqueda (RNF-01, máx. 2 s). Radar devuelve solo id, coordenadas y distancia;
+nombre, foto y estado salen de Business.
 
-### Sesión y almacenamiento del token
+### W3 · Detalle y favoritos (US-07, US-08, US-11)
 
-El JWT se guarda en `sessionStorage` (más memoria). Trade-off:
+| Detalle                                        | Favoritos                                          |
+| ---------------------------------------------- | -------------------------------------------------- |
+| ![W3 detalle](docs/screenshots/w3-detalle.png) | ![W3 favoritos](docs/screenshots/w3-favoritos.png) |
 
-- ➕ Se borra al cerrar la pestaña y no se comparte entre pestañas; sobrevive a recargar.
-- ➖ Cualquier script de la página puede leerlo: un XSS lo expone. Una cookie `httpOnly` lo evitaría pero
-  exige cambios en IAM (emisión de cookie, CSRF) que hoy no existen.
-- Mitigaciones: no usar `v-html` con datos de usuario, CSP estricta al desplegar, cierre de sesión
-  automático al llegar a `exp`. **No pasar el token a `localStorage` sin decisión del equipo.**
+### Lía (chat)
 
-El JWT se decodifica **solo** para leer `role` y `exp` (UX); la firma la valida el backend.
+![Lía](docs/screenshots/lia-chat.png)
 
-### Guards por rol
+`POST /messaging/chat` responde 202; la respuesta llega por STOMP (`/messaging/ws`, JWT en el `CONNECT`) a
+`/topic/conversations/{id}`. Si el socket no conecta, polling cada 2 s hasta 25 s. Mensajes de hasta 1000 caracteres,
+mostrados al instante. La API no tiene campo `huariqueId`: va como prefijo `[huarique:<uuid>]` del texto y se oculta al mostrarlo.
+Lía escribe las recomendaciones como texto («1. Nombre (a 320 m)»): las tarjetas se obtienen emparejando esos nombres con una
+búsqueda de Radar. Los avisos de reserva manual (RF-15) se detectan por su frase.
 
-`meta.public`, `meta.guestOnly` y `meta.role` en `src/app/router.js`; la regla vive en
-`src/app/guards.js` (`resolveNavigation`, función pura). Sin sesión → `/login`; rol incorrecto → `/403`;
-ruta inexistente → `/404`.
+### W4 · Reserva confirmada · reseña verificada (UF-W4)
 
-## Problemas conocidos del backend (a fecha 2026-11-24)
+| Solicitud                                          | Pendiente                                               | Aprobada, pase y voucher                              | Reseña verificada                                    |
+| -------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| ![reservar](docs/screenshots/w4-reservar-mesa.png) | ![pendiente](docs/screenshots/w4-reserva-pendiente.png) | ![aprobada](docs/screenshots/w4-reserva-aprobada.png) | ![reseña](docs/screenshots/w4-resena-verificada.png) |
 
-- **Business rechaza los tokens de IAM** (falta `iss`/`aud`, rol `OWNER` vs `HUARIQUE_OWNER`). Mientras no
-  se resuelva, `GET /business-api/huariques/me` responderá `401` y, por la regla del cliente HTTP, la
-  sesión del dueño se cerrará justo después de iniciar sesión. Ver `Foodly-Business-Service/docs/iam-business-jwt.md`
-  y la sección 3.1 del `CLAUDE.md` del workspace.
-- Radar y Messaging interpretan `JWT_SECRET` distinto que IAM (UTF-8 vs Base64).
+El formulario valida que la hora esté dentro de los `openingHours` del día. Estados: `PENDING → APPROVED | REJECTED | EXPIRED`,
+`APPROVED → COMPLETED | EXPIRED`. La reseña solo se habilita con la reserva `APPROVED` o `COMPLETED` y sin reseña previa
+(etiqueta «Reserva Verificada»).
+
+### W5 · Cómo llegar
+
+![W5](docs/screenshots/w5-como-llegar.png)
+
+El alcance excluye el cálculo de rutas: línea recta entre el usuario y el huarique, distancia, zona H3 y enlace a Google Maps.
+«Ya llegué al local» (check-in) pasa la reserva a `COMPLETED`.
+
+### W6 · Onboarding del dueño (UF-W5)
+
+| Paso 1                                                    | Paso 2                                                    | Paso 3                                                   |
+| --------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------- |
+| ![paso 1](docs/screenshots/w6-onboarding-1-identidad.png) | ![paso 2](docs/screenshots/w6-onboarding-2-ubicacion.png) | ![paso 3](docs/screenshots/w6-onboarding-3-horarios.png) |
+
+«Publicar Huarique y Activar Radar» hace `POST /business-api/huariques` → `PUT …/menu` (sin `version` la primera vez) →
+`PATCH …/open-status {OPEN}`, porque Business crea el huarique `CLOSED`. El borrador se guarda en `localStorage`; si falla un
+paso intermedio, el reintento continúa donde quedó. 409 → «Ya tienes un huarique registrado».
+
+### W7 · Gestión y edición (UF-W6)
+
+| Dashboard                                       | Carta y precios                                   | Galería                                     | Reputación                                        |
+| ----------------------------------------------- | ------------------------------------------------- | ------------------------------------------- | ------------------------------------------------- |
+| ![dashboard](docs/screenshots/w7-dashboard.png) | ![carta](docs/screenshots/w7-carta-y-precios.png) | ![galería](docs/screenshots/w7-galeria.png) | ![reputación](docs/screenshots/w7-reputacion.png) |
+
+Cada respuesta de Business trae la `version`, que se envía en la siguiente escritura. Con 409 por versión vieja se recarga y se
+avisa «Alguien actualizó este huarique, revisa los cambios.». Tras guardar: «Visible en el Radar en unos segundos» (RNF-08).
+Las respuestas de imágenes no traen versión: se vuelve a leer el recurso.
+
+### W8 · Gestión de reservas de Lía (dueño)
+
+| Pendientes                                                 | Aprobadas                                                |
+| ---------------------------------------------------------- | -------------------------------------------------------- |
+| ![pendientes](docs/screenshots/w8-reservas-pendientes.png) | ![aprobadas](docs/screenshots/w8-reservas-aprobadas.png) |
+
+## Pruebas y calidad
+
+- **Vitest**: dominio (validaciones, reglas de reserva y reseña, filtros), servicios (payloads exactos), stores (chat optimista,
+  deduplicación, polling, versiones, wizard) y componentes.
+- **Playwright** (`e2e/`): dueño publica y el explorador lo ve en el Radar; responsive 360/768/1280 + axe (WCAG AA) + teclado;
+  enlaces profundos. Detalle y resultados: [`docs/E2E.md`](docs/E2E.md).
+- **Lighthouse** (`/login` y `/radar`, móvil y escritorio): 100 en las cuatro categorías. Ver [`docs/LIGHTHOUSE.md`](docs/LIGHTHOUSE.md).
+
+## Docker
+
+```bash
+docker build -t foodly-webapp .
+docker run -p 8090:80 -e API_GATEWAY_HOST=host.docker.internal:8000 foodly-webapp
+```
+
+Build multi-stage: Node compila y nginx sirve el SPA con fallback a `index.html`; nginx reenvía `/iam`, `/business-api`, `/radar/`,
+`/messaging` (WebSocket incluido), `/reservation-api` y `/community` a Kong, así que no hace falta CORS. Los args
+`VITE_MOCK_RESERVATION` y `VITE_MOCK_COMMUNITY` valen `true` por defecto.
+
+Servicio opcional en `foodly-infra/docker-compose.yml` (perfil `webapp`, no arranca con `start-all.ps1`):
+`docker compose --profile webapp up -d --build webapp` → http://localhost:8090.
+
+`@emnapi/core` y `@emnapi/runtime` están fijados como devDependencies porque el lockfile generado en Windows no los incluye y
+`npm ci` falla en Linux sin ellos.
 
 ## Flujo de trabajo
 
-GitFlow: `feature/web-<descripcion>` desde `develop`, PR hacia `develop`, Conventional Commits en inglés.
-Ver `CLAUDE.md` para las reglas completas.
+GitFlow: `feature/web-<descripcion>` desde `develop`, PR hacia `develop`, Conventional Commits en inglés. Reglas completas en `CLAUDE.md`.
