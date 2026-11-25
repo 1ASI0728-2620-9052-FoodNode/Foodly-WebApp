@@ -5,7 +5,12 @@ import QRCode from 'qrcode';
 import { useReservationStore } from '../application/useReservationStore.js';
 import { useHuariqueCatalogStore } from '../../business/application/useHuariqueCatalogStore.js';
 import { useReviewStore } from '../../community/application/useReviewStore.js';
-import { BADGE_BY_STATUS, RESERVATION_STATUS, isFinal } from '../domain/reservation.js';
+import {
+  BADGE_BY_STATUS,
+  RESERVATION_STATUS,
+  STATUS_LABELS,
+  isFinal,
+} from '../domain/reservation.js';
 import ReviewForm from '../../community/interfaces/ReviewForm.vue';
 import { formatDateLong } from '../../../shared/utils/format.js';
 import { usePolling } from '../../../shared/utils/usePolling.js';
@@ -195,7 +200,7 @@ onMounted(load);
           </div>
           <div>
             <dt>Estado</dt>
-            <dd>{{ reservation.status }}</dd>
+            <dd>{{ STATUS_LABELS[reservation.status] }}</dd>
           </div>
         </dl>
         <AppButton variant="secondary" @click="printVoucher">Imprimir o guardar como PDF</AppButton>

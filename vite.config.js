@@ -20,7 +20,17 @@ export default defineConfig(({ mode }) => {
   const proxy = Object.fromEntries(
     GATEWAY_PREFIXES.map((prefix) => [
       prefix,
-      { target, changeOrigin: true, ws: prefix === '/messaging' },
+      {
+        target,
+        changeOrigin: true,
+        ws: prefix === '/messaging',
+        // /radar is both a SPA route and an API prefix: a page load or reload of /radar (the browser
+        // asks for text/html) must get the app, while fetch calls (application/json) go to Kong.
+        bypass: (req) =>
+          req.method === 'GET' && req.headers.accept?.includes('text/html')
+            ? '/index.html'
+            : undefined,
+      },
     ]),
   );
 

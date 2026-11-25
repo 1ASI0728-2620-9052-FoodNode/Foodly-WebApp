@@ -41,6 +41,14 @@ export const BADGE_BY_STATUS = Object.freeze({
   [S.COMPLETED]: 'completed',
 });
 
+export const STATUS_LABELS = Object.freeze({
+  [S.PENDING]: 'Pendiente',
+  [S.APPROVED]: 'Aprobada',
+  [S.REJECTED]: 'Rechazada',
+  [S.EXPIRED]: 'Expirada',
+  [S.COMPLETED]: 'Completada',
+});
+
 export const PARTY_SIZE_MIN = 1;
 export const PARTY_SIZE_MAX = 20;
 export const NOTES_MAX = 500;
