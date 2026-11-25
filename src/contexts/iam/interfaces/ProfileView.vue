@@ -37,6 +37,17 @@ async function logout() {
           <dd>{{ row.value }}</dd>
         </div>
       </dl>
+      <RouterLink
+        v-if="auth.isExplorer"
+        v-slot="{ navigate }"
+        :to="{ name: 'my-reservations' }"
+        custom
+      >
+        <AppButton class="profile__link" @click="navigate">
+          <AppIcon name="calendar" :size="18" />
+          Mis Reservas
+        </AppButton>
+      </RouterLink>
       <AppButton variant="secondary" @click="logout">
         <AppIcon name="logout" :size="18" />
         Cerrar sesión
@@ -73,5 +84,9 @@ async function logout() {
   margin: 0;
   font-weight: 600;
   overflow-wrap: anywhere;
+}
+.profile__link {
+  margin-right: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 </style>
