@@ -3,6 +3,8 @@ import { httpClient } from '../shared/http/index.js';
 import { useAuthStore, LOGOUT_REASONS } from '../contexts/iam/application/useAuthStore.js';
 import { useRadarStore } from '../contexts/radar/application/useRadarStore.js';
 import { useChatStore } from '../contexts/messaging/application/useChatStore.js';
+import { useOwnerHuariqueStore } from '../contexts/business/application/useOwnerHuariqueStore.js';
+import { useOnboardingStore } from '../contexts/business/application/useOnboardingStore.js';
 import { useFavoritesStore } from '../contexts/community/application/useFavoritesStore.js';
 
 /**
@@ -27,6 +29,8 @@ export function wireSession(router) {
       useRadarStore().reset();
       useFavoritesStore().reset();
       useChatStore().reset();
+      useOwnerHuariqueStore().reset();
+      useOnboardingStore().reset();
       const current = router.currentRoute.value;
       // Before the first navigation (session restore at startup) the guards decide.
       if (current.matched.length === 0 || current.meta?.public) return;
