@@ -2,6 +2,7 @@ import { watch } from 'vue';
 import { httpClient } from '../shared/http/index.js';
 import { useAuthStore, LOGOUT_REASONS } from '../contexts/iam/application/useAuthStore.js';
 import { useRadarStore } from '../contexts/radar/application/useRadarStore.js';
+import { useChatStore } from '../contexts/messaging/application/useChatStore.js';
 import { useFavoritesStore } from '../contexts/community/application/useFavoritesStore.js';
 
 /**
@@ -25,6 +26,7 @@ export function wireSession(router) {
       // Nothing from the previous user may leak into the next session.
       useRadarStore().reset();
       useFavoritesStore().reset();
+      useChatStore().reset();
       const current = router.currentRoute.value;
       // Before the first navigation (session restore at startup) the guards decide.
       if (current.matched.length === 0 || current.meta?.public) return;

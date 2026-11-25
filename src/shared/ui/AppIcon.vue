@@ -26,6 +26,8 @@ export const ICONS = Object.freeze({
     'M21 15l-5-5L5 21',
   ],
   check: ['M20 6L9 17l-5-5'],
+  arrowLeft: ['M19 12H5', 'M12 19l-7-7 7-7'],
+  send: ['M22 2L11 13', 'M22 2l-7 20-4-9-9-4 20-7z'],
   x: ['M18 6L6 18', 'M6 6l12 12'],
   clock: [circle(12, 12, 10), 'M12 6v6l4 2'],
   alert: [

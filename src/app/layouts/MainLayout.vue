@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useAuthStore } from '../../contexts/iam/application/useAuthStore.js';
 import { BRAND_NAMES, NAV_ITEMS } from '../navigation.js';
 import AppIcon from '../../shared/ui/AppIcon.vue';
+import AskLiaDrawer from '../../contexts/messaging/interfaces/AskLiaDrawer.vue';
 
 const auth = useAuthStore();
 
@@ -30,6 +31,8 @@ const brand = computed(() => BRAND_NAMES[auth.role] ?? 'Foodly');
     <main id="main" class="main-layout__content">
       <RouterView />
     </main>
+
+    <AskLiaDrawer v-if="auth.isExplorer" />
 
     <nav class="bottombar" aria-label="Navegación principal">
       <RouterLink
