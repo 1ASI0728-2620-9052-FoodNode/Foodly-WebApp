@@ -1,6 +1,8 @@
 import { watch } from 'vue';
 import { httpClient } from '../shared/http/index.js';
 import { useAuthStore, LOGOUT_REASONS } from '../contexts/iam/application/useAuthStore.js';
+import { useRadarStore } from '../contexts/radar/application/useRadarStore.js';
+import { useFavoritesStore } from '../contexts/community/application/useFavoritesStore.js';
 
 /**
  * Wires the shared HTTP client to the session and keeps the router in sync with it.
@@ -20,6 +22,9 @@ export function wireSession(router) {
     () => auth.isAuthenticated,
     (isAuthenticated) => {
       if (isAuthenticated) return;
+      // Nothing from the previous user may leak into the next session.
+      useRadarStore().reset();
+      useFavoritesStore().reset();
       const current = router.currentRoute.value;
       // Before the first navigation (session restore at startup) the guards decide.
       if (current.matched.length === 0 || current.meta?.public) return;
