@@ -12,3 +12,14 @@ export function formatSoles(amount) {
 export function formatPriceRange(min, max) {
   return min === max ? formatSoles(min) : `${formatSoles(min)} – ${formatSoles(max)}`;
 }
+
+/** 'YYYY-MM-DD' -> "martes, 24 de noviembre" (local date, no timezone shift). */
+export function formatDateLong(dateString) {
+  const [year, month, day] = String(dateString).split('-').map(Number);
+  if (!year || !month || !day) return '';
+  return new Intl.DateTimeFormat('es-PE', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date(year, month - 1, day));
+}
